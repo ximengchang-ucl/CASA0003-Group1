@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>粒子炫酷封面</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+    }
+    .overlay {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      height: 100%;
+      text-align: center;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .overlay h1 {
+      font-size: 4em;
+      margin: 0;
+    }
+    .overlay p {
+      font-size: 1.5em;
+      margin: 0.5em 0;
+      color: rgba(255,255,255,0.8);
+    }
+    .overlay .btn {
+      padding: 0.8em 1.5em;
+      border: 1px solid #fff;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .overlay .btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div class="overlay">
+  <h1>欢迎来到我的网站</h1>
+  <p>粒子互动效果示例</p>
+  <div class="btn">了解更多</div>
+</div>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  const num = Math.floor(window.innerWidth / 10);
+  let mouse = { x: null, y: null };
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    init();
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+  window.addEventListener('mouseout', () => {
+    mouse.x = null;
+    mouse.y = null;
+  });
+
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.vx = (Math.random() - 0.5) * 0.6;
+      this.vy = (Math.random() - 0.5) * 0.6;
+      this.r = 1 + Math.random() * 2;
+      this.color = 'rgba(255,255,255,0.8)';
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+    update() {
+      if (this.x + this.r > canvas.width || this.x - this.r < 0) this.vx *= -1;
+      if (this.y + this.r > canvas.height || this.y - this.r < 0) this.vy *= -1;
+      this.x += this.vx;
+      this.y += this.vy;
+
+      if (mouse.x !== null && mouse.y !== null) {
+        const dx = this.x - mouse.x;
+        const dy = this.y - mouse.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 100) {
+          const angle = Math.atan2(dy, dx);
+          this.x += Math.cos(angle) * 2;
+          this.y += Math.sin(angle) * 2;
+        }
+      }
+      this.draw();
+    }
+  }
+
+  function connect() {
+    for (let a = 0; a < particles.length; a++) {
+      for (let b = a; b < particles.length; b++) {
+        const dx = particles[a].x - particles[b].x;
+        const dy = particles[a].y - particles[b].y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 80) {
+          ctx.strokeStyle = 'rgba(255,255,255,' + (1 - dist / 80) * 0.3 + ')';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(particles[a].x, particles[a].y);
+          ctx.lineTo(particles[b].x, particles[b].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function init() {
+    particles = [];
+    for (let i = 0; i < num; i++) {
+      particles.push(new Particle());
+    }
+  }
+
+  function animate() {
+    // 背景渐变
+    const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    grd.addColorStop(0, '#0f2027');
+    grd.addColorStop(0.5, '#203a43');
+    grd.addColorStop(1, '#2c5364');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    particles.forEach(p => p.update());
+    connect();
+    requestAnimationFrame(animate);
+  }
+
+  resizeCanvas();
+  animate();
+</script>
+</body>
+</html>
